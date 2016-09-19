@@ -13,6 +13,7 @@
 #include <functional>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 namespace SimpleWeb {
     template <class socket_type>
@@ -294,11 +295,14 @@ namespace SimpleWeb {
 
                     size_t protocol_end;
                     if((protocol_end=line.find('/', path_end+1))!=std::string::npos) {
-                        if(line.substr(path_end+1, protocol_end-path_end-1)!="HTTP")
+                        
+                        std::string version = line.substr(protocol_end+1, line.size()-protocol_end-2);
+                        
+                        if(line.substr(path_end+1, protocol_end-path_end-1)!="HTTP" || !ifNumber(version)) {
                             return false;
-                        request->http_version=line.substr(protocol_end+1, line.size()-protocol_end-2);
-                    }
-                    else
+                        }
+                        request->http_version=version;
+                    }else
                         return false;
 
                     getline(stream, line);
@@ -321,6 +325,13 @@ namespace SimpleWeb {
             else
                 return false;
             return true;
+        }
+        
+        static bool ifNumber(std::string &floatString){
+            std::istringstream iss(floatString);
+            float f;
+            iss >> std::noskipws >> f;
+            return iss.eof() && !iss.fail();
         }
 
         void find_resource(std::shared_ptr<socket_type> socket, std::shared_ptr<Request> request) {
